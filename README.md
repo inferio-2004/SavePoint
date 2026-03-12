@@ -30,7 +30,20 @@ The backend is built with Spring Boot and PostgreSQL.
 
 - Java 21
 - Maven
-- PostgreSQL running locally
+- Docker
+
+**Start the database**
+
+Run a PostgreSQL container:
+
+```bash
+docker run --name savepoint-db \
+  -e POSTGRES_DB=savepoint \
+  -e POSTGRES_USER=your_db_username \
+  -e POSTGRES_PASSWORD=your_db_password \
+  -p 5432:5432 \
+  -d postgres
+```
 
 **Setup**
 
@@ -48,6 +61,8 @@ server.servlet.session.cookie.http-only=true
 server.servlet.session.cookie.same-site=strict
 server.servlet.session.cookie.secure=false
 ```
+
+Make sure the username and password here match what you passed to the Docker container above.
 
 You can get a Steam API key at steamcommunity.com/dev/apikey. Use localhost as the domain when developing locally.
 
