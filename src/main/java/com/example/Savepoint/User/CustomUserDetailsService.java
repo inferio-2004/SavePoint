@@ -18,6 +18,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
+    //used mail since it is unique and can be used to identify user instead of display
+    // name which is not unique in this db scheme
     public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String mail) {
 
          UserAuth foundedUserAuth = repositry.findByProviderAndMailId(AuthProvider.MANUAL, mail)
