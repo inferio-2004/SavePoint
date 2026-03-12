@@ -31,7 +31,7 @@ public class UserAuth {
     //@JoinColumn(name = "owner_user_id") //this is for customising the column name
     @JsonIgnore
     private UserProfile user;
-    @Column(unique = true)
+    @Column(unique = true,nullable = true)
     private String mailId;
     @CreationTimestamp
     private LocalDateTime authCreatedAt;

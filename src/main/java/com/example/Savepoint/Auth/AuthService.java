@@ -1,6 +1,5 @@
 package com.example.Savepoint.Auth;
 
-import com.example.Savepoint.Exceptions.BadCredentialsException;
 import com.example.Savepoint.Exceptions.UserAlreadyExistsException;
 import com.example.Savepoint.User.UserLoginDTO;
 import com.example.Savepoint.User.UserProfileDTO;
@@ -19,11 +18,12 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Map;
 
 @Service
 public class AuthService {
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository= new HttpSessionSecurityContextRepository();
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
@@ -62,7 +62,7 @@ public class AuthService {
                 userLoginDTO.mail(), userLoginDTO.password());
         var authenticated = authenticationManager.authenticate(unauthenticated);
         saveToSession(authenticated, request, response);
-        return userService.findByEmail(userLoginDTO.mail()).get();
+        return userService.findByEmail(userLoginDTO.mail()).orElseThrow();
     }
 
     public UserProfileDTO handleManualRegister(UserRegisterDTO userRegisterDTO,
@@ -74,9 +74,10 @@ public class AuthService {
         String hashedPassword = passwordEncoder.encode(userRegisterDTO.password());
         UserProfileDTO newUser = userService.createManualUser(userRegisterDTO.withPassword(hashedPassword));
 
-        var unauthenticated = new UsernamePasswordAuthenticationToken(
-                userRegisterDTO.mail(), userRegisterDTO.password());
-        var authenticated = authenticationManager.authenticate(unauthenticated);
+        // No need to call authenticate() again — we just created the user, credentials are valid.
+        // Build the authenticated token directly to avoid a redundant DB round-trip.
+        var authenticated = new UsernamePasswordAuthenticationToken(
+                userRegisterDTO.mail(), null, Collections.emptyList());
         saveToSession(authenticated, request, response);
         return newUser;
     }
