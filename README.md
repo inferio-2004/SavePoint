@@ -72,7 +72,7 @@ You can get a Steam API key at steamcommunity.com/dev/apikey. Use localhost as t
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-The server starts on port 8080 by default.
+The server starts on port 5000.
 
 **Auth endpoints**
 
