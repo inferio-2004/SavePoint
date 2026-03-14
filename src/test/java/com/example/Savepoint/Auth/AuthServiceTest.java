@@ -13,12 +13,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
 import java.util.Map;
@@ -26,16 +32,21 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
+    private static final String STEAM_ID = "76561198000000001";
+
     @Mock AuthenticationManager authenticationManager;
     @Mock UserService userService;
     @Mock PasswordEncoder passwordEncoder;
-    @Mock HttpServletRequest request;
-    @Mock HttpServletResponse response;
+    @Mock RestTemplate restTemplate;
+
+    private HttpServletRequest request;
+    private HttpServletResponse response;
 
     @InjectMocks AuthService authService;
 
@@ -43,11 +54,11 @@ class AuthServiceTest {
 
     @BeforeEach
     void setup() {
-        // inject @Value field
         ReflectionTestUtils.setField(authService, "appBaseUrl", "http://localhost:5000");
+        ReflectionTestUtils.setField(authService, "steamApiKey", "FAKE_API_KEY");
+        request = new MockHttpServletRequest();
+        response = new MockHttpServletResponse();
     }
-
-    // ── getRedirectUrlSteam ───────────────────────────────────────────────────
 
     @Test
     void getRedirectUrlSteam_containsReturnTo() {
@@ -67,13 +78,12 @@ class AuthServiceTest {
         assertThat(url).startsWith("https://steamcommunity.com/openid/login");
     }
 
-    // ── handleSteamCallback ───────────────────────────────────────────────────
-
     @Test
-    void handleSteamCallback_returnsUserProfileDTO() {
-        Map<String, String> params = Map.of("openid.claimed_id", "https://steamcommunity.com/openid/id/123456");
-        SteamAuthToken authenticatedToken = new SteamAuthToken(params, mockUser);
+    void handleSteamCallback_returnsUserProfileDTO_forExistingUser() {
+        Map<String, String> params = Map.of("openid.claimed_id", "https://steamcommunity.com/openid/id/" + STEAM_ID);
+        SteamAuthToken authenticatedToken = new SteamAuthToken(params, STEAM_ID);
         when(authenticationManager.authenticate(any(SteamAuthToken.class))).thenReturn(authenticatedToken);
+        when(userService.findBySteamId(STEAM_ID)).thenReturn(Optional.of(mockUser));
 
         UserProfileDTO result = authService.handleSteamCallback(params, request, response);
 
@@ -81,10 +91,35 @@ class AuthServiceTest {
     }
 
     @Test
-    void handleSteamCallback_delegatesToAuthManager() {
-        Map<String, String> params = Map.of("openid.claimed_id", "https://steamcommunity.com/openid/id/123456");
-        SteamAuthToken authenticatedToken = new SteamAuthToken(params, mockUser);
+    void handleSteamCallback_createsSteamUser_whenNotFound() {
+        Map<String, String> params = Map.of("openid.claimed_id", "https://steamcommunity.com/openid/id/" + STEAM_ID);
+        SteamAuthToken authenticatedToken = new SteamAuthToken(params, STEAM_ID);
+        UserProfileDTO createdUser = new UserProfileDTO(2, "NewSteamUser", "http://new-avatar.url");
+        SteamApiResponse apiResponse = new SteamApiResponse(
+                new PlayersResponse(java.util.List.of(
+                        new PlayerSummary(STEAM_ID, "NewSteamUser", "http://new-avatar.url")
+                ))
+        );
+
         when(authenticationManager.authenticate(any(SteamAuthToken.class))).thenReturn(authenticatedToken);
+        when(userService.findBySteamId(STEAM_ID)).thenReturn(Optional.empty());
+        when(restTemplate.getForEntity(anyString(), eq(SteamApiResponse.class)))
+                .thenReturn(ResponseEntity.ok(apiResponse));
+        when(userService.createSteamUser(STEAM_ID, "NewSteamUser", "http://new-avatar.url"))
+                .thenReturn(createdUser);
+
+        UserProfileDTO result = authService.handleSteamCallback(params, request, response);
+
+        assertThat(result).isEqualTo(createdUser);
+        verify(userService).createSteamUser(STEAM_ID, "NewSteamUser", "http://new-avatar.url");
+    }
+
+    @Test
+    void handleSteamCallback_delegatesToAuthManager() {
+        Map<String, String> params = Map.of("openid.claimed_id", "https://steamcommunity.com/openid/id/" + STEAM_ID);
+        SteamAuthToken authenticatedToken = new SteamAuthToken(params, STEAM_ID);
+        when(authenticationManager.authenticate(any(SteamAuthToken.class))).thenReturn(authenticatedToken);
+        when(userService.findBySteamId(STEAM_ID)).thenReturn(Optional.of(mockUser));
 
         authService.handleSteamCallback(params, request, response);
 
@@ -125,9 +160,30 @@ class AuthServiceTest {
 
         verify(authenticationManager).authenticate(argThat(token ->
                 token instanceof UsernamePasswordAuthenticationToken t &&
-                t.getPrincipal().equals("test@mail.com") &&
-                t.getCredentials().equals("password123")
+                "test@mail.com".equals(t.getPrincipal()) &&
+                "password123".equals(t.getCredentials())
         ));
+    }
+
+    @Test
+    void handleManualLogin_storesCustomSessionAuthentication() {
+        UserLoginDTO dto = new UserLoginDTO("password123", "test@mail.com");
+        Authentication auth = new UsernamePasswordAuthenticationToken("test@mail.com", null, Collections.emptyList());
+        when(authenticationManager.authenticate(any())).thenReturn(auth);
+        when(userService.findByEmail("test@mail.com")).thenReturn(Optional.of(mockUser));
+
+        authService.handleManualLogin(dto, request, response);
+
+        var session = ((MockHttpServletRequest) request).getSession(false);
+        assertThat(session).isNotNull();
+
+        SecurityContext securityContext = (SecurityContext) session
+                .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        assertThat(securityContext).isNotNull();
+        assertThat(securityContext.getAuthentication()).isInstanceOf(SessionAuthenticationToken.class);
+        assertThat(securityContext.getAuthentication()).isNotNull();
+        assertThat(securityContext.getAuthentication().getPrincipal())
+                .isEqualTo(new SessionAuthPrincipal(mockUser.id(), mockUser.displayName(), AuthProvider.MANUAL, null));
     }
 
     @Test

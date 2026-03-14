@@ -29,3 +29,6 @@ logs/
 
 # PostgreSQL
 *.sql.bak
+
+# some unnescessary readme files
+savepoint_context.md

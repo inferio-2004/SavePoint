@@ -21,21 +21,10 @@ import java.util.Map;
 public class SteamAuthProvider implements AuthenticationProvider {
 
     private final RestTemplate restTemplate;
-    private final UserService userService;
-    @Value("${steam.api.key}")
-    private String steamApiKey;
+
 
     public SteamAuthProvider(RestTemplate restTemplate,UserService userService) {
         this.restTemplate = restTemplate;
-        this.userService = userService;
-    }
-
-
-    public String getSteamUserProfile(String steamUserId) {
-        String template="https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/" +
-                "?key=%s" +
-                "&steamids=%s";
-        return String.format(template, steamApiKey, steamUserId);
     }
 
     @Override
@@ -67,21 +56,10 @@ public class SteamAuthProvider implements AuthenticationProvider {
         String steamId = claimedId.substring(claimedId.lastIndexOf("/") + 1);
 
         // Step 3 - Find or create user
-        UserProfileDTO user = userService.findBySteamId(steamId)
-                .orElseGet(() -> {
-                    ResponseEntity<SteamApiResponse> profileResponse =
-                            restTemplate.getForEntity(getSteamUserProfile(steamId), SteamApiResponse.class);
-                    try{
-                        String displayName = profileResponse.getBody().response().players().get(0).personaname();
-                        String avatarUrl = profileResponse.getBody().response().players().get(0).avatarfull();
-                        return userService.createSteamUser(steamId, displayName, avatarUrl);
-                    }catch(IndexOutOfBoundsException err){
-                        throw new SteamUserNotFoundException("Steam user not found");
-                    }
-                });
+
 
         // Step 4 - Return authenticated token
-        return new SteamAuthToken(params, user);
+        return new SteamAuthToken(params, steamId);
     }
 
     @Override

@@ -1,13 +1,13 @@
 package com.example.Savepoint.Auth;
 
-import com.example.Savepoint.User.UserProfileDTO;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+
 import java.util.Collections;
 import java.util.Map;
 
 public class SteamAuthToken extends AbstractAuthenticationToken {
     private final Map<String, String> openIdParams;
-    private final UserProfileDTO principal;
+    private final String principal;
 
     // Unauthenticated constructor - used in controller before verification
     public SteamAuthToken(Map<String, String> openIdParams) {
@@ -18,7 +18,7 @@ public class SteamAuthToken extends AbstractAuthenticationToken {
     }
 
     // Authenticated constructor - used in provider after verification
-    public SteamAuthToken(Map<String, String> openIdParams, UserProfileDTO principal) {
+    public SteamAuthToken(Map<String, String> openIdParams, String principal) {
         super(Collections.emptyList());
         this.openIdParams = openIdParams;
         this.principal = principal;

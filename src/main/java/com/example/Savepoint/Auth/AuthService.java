@@ -1,5 +1,6 @@
 package com.example.Savepoint.Auth;
 
+import com.example.Savepoint.Exceptions.SteamUserNotFoundException;
 import com.example.Savepoint.Exceptions.UserAlreadyExistsException;
 import com.example.Savepoint.User.UserLoginDTO;
 import com.example.Savepoint.User.UserProfileDTO;
@@ -8,6 +9,7 @@ import com.example.Savepoint.User.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,8 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.Collections;
 import java.util.Map;
 
 @Service
@@ -27,12 +29,24 @@ public class AuthService {
     private final SecurityContextRepository securityContextRepository= new HttpSessionSecurityContextRepository();
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final RestTemplate restTemplate;
     @Value("${app.base.url}")
     private String appBaseUrl;
-    public AuthService(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder passwordEncoder) {
+    @Value("${steam.api.key}")
+    private String steamApiKey;
+
+    public AuthService(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder passwordEncoder, RestTemplate restTemplate) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.restTemplate = restTemplate;
+    }
+
+    public String getSteamUserProfile(String steamUserId) {
+        String template="https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/" +
+                "?key=%s" +
+                "&steamids=%s";
+        return String.format(template, steamApiKey, steamUserId);
     }
 
     public String getRedirectUrlSteam() {
@@ -51,8 +65,23 @@ public class AuthService {
                                               HttpServletResponse response) {
         SteamAuthToken authentication_token= new SteamAuthToken(authParams);
         var token=(SteamAuthToken)authenticationManager.authenticate(authentication_token);
-        saveToSession(token, request, response);
-        return (UserProfileDTO) token.getPrincipal();
+        String steamId = (String) token.getPrincipal();
+        UserProfileDTO user = userService.findBySteamId(steamId)
+                .orElseGet(() -> {
+                    ResponseEntity<SteamApiResponse> profileResponse =
+                            restTemplate.getForEntity(getSteamUserProfile(steamId), SteamApiResponse.class);
+                    try{
+                        String displayName = profileResponse.getBody().response().players().get(0).personaname();
+                        String avatarUrl = profileResponse.getBody().response().players().get(0).avatarfull();
+                        return userService.createSteamUser(steamId, displayName, avatarUrl);
+                    }catch(IndexOutOfBoundsException err){
+                        throw new SteamUserNotFoundException("Steam user not found");
+                    }
+                });
+        var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.STEAM, steamId);
+        var sessionAuthentication = new SessionAuthenticationToken(principal, token.getAuthorities());
+        saveToSession(sessionAuthentication, request, response);
+        return user;
     }
 
     public UserProfileDTO handleManualLogin(UserLoginDTO userLoginDTO,
@@ -61,8 +90,11 @@ public class AuthService {
         var unauthenticated = new UsernamePasswordAuthenticationToken(
                 userLoginDTO.mail(), userLoginDTO.password());
         var authenticated = authenticationManager.authenticate(unauthenticated);
-        saveToSession(authenticated, request, response);
-        return userService.findByEmail(userLoginDTO.mail()).orElseThrow();
+        var user=userService.findByEmail(userLoginDTO.mail()).orElseThrow();
+        var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.MANUAL, null);
+        var sessionAuthentication = new SessionAuthenticationToken(principal, authenticated.getAuthorities());
+        saveToSession(sessionAuthentication, request, response);
+        return user;
     }
 
     public UserProfileDTO handleManualRegister(UserRegisterDTO userRegisterDTO,
@@ -74,11 +106,9 @@ public class AuthService {
         String hashedPassword = passwordEncoder.encode(userRegisterDTO.password());
         UserProfileDTO newUser = userService.createManualUser(userRegisterDTO.withPassword(hashedPassword));
 
-        // No need to call authenticate() again — we just created the user, credentials are valid.
-        // Build the authenticated token directly to avoid a redundant DB round-trip.
-        var authenticated = new UsernamePasswordAuthenticationToken(
-                userRegisterDTO.mail(), null, Collections.emptyList());
-        saveToSession(authenticated, request, response);
+        var principal = new SessionAuthPrincipal(newUser.id(), newUser.displayName(), AuthProvider.MANUAL, null);
+        var sessionAuthentication = new SessionAuthenticationToken(principal);
+        saveToSession(sessionAuthentication, request, response);
         return newUser;
     }
 
