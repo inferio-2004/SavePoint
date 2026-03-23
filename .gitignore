@@ -12,8 +12,7 @@ target/
 
 
 # Application properties with secrets
-application-local.properties
-application-prod.properties
+application-*.properties
 
 # Environment
 .env

@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Optional;
-
+import org.springframework.dao.DataIntegrityViolationException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -26,6 +26,7 @@ class GameServiceTest {
     @Mock private GameDeveloperRepository gameDeveloperRepository;
     @Mock private GamePlatformRepository gamePlatformRepository;
     @Mock private IgdbService igdbService;
+    @Mock private GamePersistenceHelper gamePersistenceHelper;
 
     @InjectMocks
     private GameService gameService;
@@ -146,5 +147,22 @@ class GameServiceTest {
         verify(igdbService, times(1)).fetchTopGames(500, 500);
         verify(igdbService, times(1)).fetchByIds(any());
         verify(gameRepository, times(1)).save(any(Game.class));
+    }
+
+    @Test
+    void persistGame_raceCondition_fallsBackToFetch() {
+        IgdbGame igdbGame = buildIgdbGame();
+        Game existingGame = Game.builder().id(1L).igdbId(119133).title("Elden Ring").build();
+
+        when(igdbService.searchByName("Elden Ring")).thenReturn(List.of(igdbGame));
+        when(igdbService.fetchByIds(any())).thenReturn(List.of());
+        when(gamePersistenceHelper.tryInsertGame(any(), any()))
+                .thenThrow(DataIntegrityViolationException.class);
+        when(gameRepository.findByIgdbId(119133)).thenReturn(Optional.of(existingGame));
+
+        gameService.searchByName("Elden Ring");
+
+        verify(gamePersistenceHelper, times(1)).tryInsertGame(any(), any());
+        verify(gameRepository, times(1)).findByIgdbId(119133);
     }
 }

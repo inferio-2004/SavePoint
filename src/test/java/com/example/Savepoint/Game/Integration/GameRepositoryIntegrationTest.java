@@ -1,13 +1,20 @@
 package com.example.Savepoint.Game.Integration;
 
 import com.example.Savepoint.Game.Entities.*;
+import com.example.Savepoint.Game.IgdbGame;
 import com.example.Savepoint.Game.Repositories.*;
+import com.example.Savepoint.Game.Services.GameService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
