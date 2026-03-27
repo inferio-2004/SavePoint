@@ -64,7 +64,10 @@ public class GamePersistenceHelper {
                 for (IgdbGame.Genre g : igdbGame.genres()) {
                     Genre genre = genreRepository.findByName(g.name())
                             .orElseGet(() -> genreRepository.save(Genre.builder().name(g.name()).build()));
-                    gameGenreRepository.save(GameGenre.builder().game(game).genre(genre).build());
+                    boolean exists = gameGenreRepository.existsByGameAndGenre(game, genre);
+                    if (!exists) {
+                        gameGenreRepository.save(GameGenre.builder().game(game).genre(genre).build());
+                    }
                 }
             }
 
@@ -74,7 +77,10 @@ public class GamePersistenceHelper {
                     if (ic.developer()) {
                         Developer dev = developerRepository.findByName(ic.company().name())
                                 .orElseGet(() -> developerRepository.save(Developer.builder().name(ic.company().name()).build()));
-                        gameDeveloperRepository.save(GameDeveloper.builder().game(game).developer(dev).build());
+                        boolean exists = gameDeveloperRepository.existsByGameAndDeveloper(game, dev);
+                        if (!exists) {
+                            gameDeveloperRepository.save(GameDeveloper.builder().game(game).developer(dev).build());
+                        }
                     }
                 }
             }

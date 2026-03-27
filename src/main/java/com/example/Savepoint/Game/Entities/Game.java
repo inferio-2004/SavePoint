@@ -24,6 +24,7 @@ public class Game {
     private Integer igdbId;
     @Column(nullable=false)
     private String title;
+    @Column(columnDefinition = "TEXT")
     private String description;
     private String coverThumb;
     private String coverBig;

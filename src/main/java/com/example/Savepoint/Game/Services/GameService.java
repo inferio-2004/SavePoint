@@ -94,13 +94,15 @@ public class GameService {
                 .toList();
     }
 
+    public GameDTO getGameById(Long id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+        return toDTO(game);
+    }
+
+
     public Game persistGame(IgdbGame igdbGame, List<IgdbGame.Platform> platforms) {
-        try {
-            return gamePersistenceHelper.tryInsertGame(igdbGame, platforms);
-        } catch (DataIntegrityViolationException e) {
-            System.out.println("game already exists...");
-            return gameRepository.findByIgdbId(igdbGame.id()).orElseThrow();
-        }
+        return gamePersistenceHelper.tryInsertGame(igdbGame, platforms);
     }
 
     private GameDTO toDTO(Game game) {

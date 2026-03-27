@@ -2,6 +2,7 @@ package com.example.Savepoint.Auth;
 
 import com.example.Savepoint.Exceptions.SteamUserNotFoundException;
 import com.example.Savepoint.Exceptions.UserAlreadyExistsException;
+import com.example.Savepoint.Steam.SteamService;
 import com.example.Savepoint.User.UserLoginDTO;
 import com.example.Savepoint.User.UserProfileDTO;
 import com.example.Savepoint.User.UserRegisterDTO;
@@ -30,16 +31,18 @@ public class AuthService {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
+    private final SteamService steamService;
     @Value("${app.base.url}")
     private String appBaseUrl;
     @Value("${steam.api.key}")
     private String steamApiKey;
 
-    public AuthService(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder passwordEncoder, RestTemplate restTemplate) {
+    public AuthService(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder passwordEncoder, RestTemplate restTemplate, SteamService steamService) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.restTemplate = restTemplate;
+        this.steamService = steamService;
     }
 
     public String getSteamUserProfile(String steamUserId) {
@@ -81,6 +84,7 @@ public class AuthService {
         var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.STEAM, steamId);
         var sessionAuthentication = new SessionAuthenticationToken(principal, token.getAuthorities());
         saveToSession(sessionAuthentication, request, response);
+        steamService.importSteamLibrary(user.id(), steamId);
         return user;
     }
 
