@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RestClientException.class)
     public ResponseEntity<ErrorResponse> handleSteamUnreachable(RestClientException ex) {
-        return ResponseEntity.status(503).body(new ErrorResponse(503, "Steam service unavailable"));
+        return ResponseEntity.status(503).body(new ErrorResponse(503, "External Service is service unavailable. "+ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -47,6 +47,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ErrorResponse> handleDatabaseError(DataAccessException ex) {
-        return ResponseEntity.status(503).body(new ErrorResponse(503, "Service temporarily unavailable"));
+        return ResponseEntity.status(503).body(new ErrorResponse(503, "DataBase Service temporarily unavailable"));
+    }
+
+    @ExceptionHandler(GameNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleGameNotFound(GameNotFoundException ex) {
+        return ResponseEntity.status(404).body(new ErrorResponse(404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(ReviewNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleReviewNotFound(ReviewNotFoundException ex) {
+        return ResponseEntity.status(404).body(new ErrorResponse(404, ex.getMessage()));
     }
 }

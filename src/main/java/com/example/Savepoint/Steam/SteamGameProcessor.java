@@ -50,7 +50,12 @@ public class SteamGameProcessor {
                     List<IgdbGame> searchResults = igdbService.searchByName(steamGame.name());
                     if (searchResults.isEmpty()) return;
 
-                    IgdbGame igdbGame = searchResults.get(0);
+                    IgdbGame igdbGame = searchResults.stream()
+                            .filter(g -> g.name().equalsIgnoreCase(steamGame.name()))
+                            .findFirst()
+                            .orElse(searchResults.get(0));
+
+                    searchResults.forEach(g -> System.out.println(">>> IGDB result: " + g.name()));
 
                     // Fetch platform data for this game
                     List<IgdbGame.Platform> platforms = igdbService.fetchByIds(List.of(igdbGame.id()))

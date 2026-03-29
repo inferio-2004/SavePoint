@@ -1,6 +1,8 @@
 package com.example.Savepoint.Game.Services;
 
+import com.example.Savepoint.Game.Entities.Game;
 import com.example.Savepoint.Game.IgdbGame;
+import com.example.Savepoint.Game.Repositories.GameRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -11,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,10 +23,13 @@ public class IgdbService {
     private String clientID;
     private IgdbTokenService igdbTokenService;
     private RestTemplate restTemplate;
-    public IgdbService(IgdbTokenService igdbTokenService,RestTemplate restTemplate) {
+
+    public IgdbService(IgdbTokenService igdbTokenService,RestTemplate restTemplate,GameRepository gameRepository) {
         this.igdbTokenService = igdbTokenService;
         this.restTemplate = restTemplate;
+
     }
+
     public List<IgdbGame> searchByName(String gameName) {
         HttpHeaders headers = buildHeaders();
 

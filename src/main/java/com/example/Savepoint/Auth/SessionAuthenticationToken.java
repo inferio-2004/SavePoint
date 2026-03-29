@@ -29,5 +29,6 @@ public class SessionAuthenticationToken extends AbstractAuthenticationToken {
     public SessionAuthPrincipal getPrincipal() {
         return principal;
     }
+
 }
 
