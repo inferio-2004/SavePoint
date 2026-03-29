@@ -125,4 +125,9 @@ public class AuthService {
         securityContextRepository.saveContext(context, request, response);
     }
 
+    public Integer getCurrentUserId(Authentication authentication) {
+        SessionAuthenticationToken principal = (SessionAuthenticationToken) authentication.getPrincipal();
+        return principal.getPrincipal().id();
+    }
+
 }

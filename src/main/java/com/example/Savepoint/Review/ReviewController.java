@@ -1,5 +1,6 @@
 package com.example.Savepoint.Review;
 
+import com.example.Savepoint.Auth.AuthService;
 import com.example.Savepoint.Auth.SessionAuthenticationToken;
 import com.example.Savepoint.Review.DTO.ReviewDTO;
 import com.example.Savepoint.Review.DTO.ReviewRequestDTO;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final AuthService authService;
 
     // Save or update a draft. Idempotent — safe to call multiple times.
     @PostMapping("/{gameId}")
@@ -25,7 +27,7 @@ public class ReviewController {
             @PathVariable Long gameId,
             @Valid @RequestBody ReviewRequestDTO dto,
             Authentication authentication) {
-        Integer userId = getCurrentUserId(authentication);
+        Integer userId = authService.getCurrentUserId(authentication);
         return ResponseEntity.ok(reviewService.saveReview(gameId, dto, userId));
     }
 
@@ -34,7 +36,7 @@ public class ReviewController {
     public ResponseEntity<ReviewDTO> publishReview(
             @PathVariable Long gameId,
             Authentication authentication) {
-        Integer userId = getCurrentUserId(authentication);
+        Integer userId = authService.getCurrentUserId(authentication);
         return ResponseEntity.ok(reviewService.publishReview(gameId, userId));
     }
 
@@ -51,18 +53,11 @@ public class ReviewController {
     public ResponseEntity<ReviewDTO> getOwnReview(
             @PathVariable Long gameId,
             Authentication authentication) {
-        Integer userId = getCurrentUserId(authentication);
+        Integer userId = authService.getCurrentUserId(authentication);
         return ResponseEntity.ok(reviewService.getOwnReview(gameId, userId));
     }
 
     // Adapt this to however your UserDetails stores the userId.
     // If you stored userId in a custom UserDetails, cast and call getUserId().
     // If not, inject UserService and look up by email: userDetails.getUsername()
-    private Integer getCurrentUserId(Authentication authentication) {
-        // Example if using custom UserDetails:
-        // return ((CustomUserDetails) authentication.getPrincipal()).getUserId();
-        SessionAuthenticationToken principal = (SessionAuthenticationToken) authentication.getPrincipal();
-        return principal.getPrincipal().id();
-        //throw new UnsupportedOperationException("Implement getCurrentUserId based on your UserDetails");
-    }
 }
