@@ -4,7 +4,12 @@ import com.example.Savepoint.Game.DTO.GameDTO;
 import com.example.Savepoint.Game.Entities.*;
 import com.example.Savepoint.Game.IgdbGame;
 import com.example.Savepoint.Game.Repositories.*;
+import com.example.Savepoint.Game.Search.GameDocument;
+import com.example.Savepoint.Search.ElasticSearchIndexService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class GameService {
 
     private final GameRepository gameRepository;
@@ -26,23 +32,7 @@ public class GameService {
     private final GamePlatformRepository gamePlatformRepository;
     private final IgdbService igdbService;
     private final GamePersistenceHelper gamePersistenceHelper;
-
-    public GameService(GameRepository gameRepository,
-                       GenreRepository genreRepository,
-                       GameGenreRepository gameGenreRepository,
-                       DeveloperRepository developerRepository,
-                       GameDeveloperRepository gameDeveloperRepository,
-                       GamePlatformRepository gamePlatformRepository,
-                       IgdbService igdbService, GamePersistenceHelper gamePersistenceHelper) {
-        this.gameRepository = gameRepository;
-        this.genreRepository = genreRepository;
-        this.gameGenreRepository = gameGenreRepository;
-        this.developerRepository = developerRepository;
-        this.gameDeveloperRepository = gameDeveloperRepository;
-        this.gamePlatformRepository = gamePlatformRepository;
-        this.igdbService = igdbService;
-        this.gamePersistenceHelper = gamePersistenceHelper;
-    }
+    private final ElasticsearchOperations elasticsearchOperations;
 
     @Transactional
     public void seedTopGames() {
@@ -70,28 +60,33 @@ public class GameService {
         }
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<GameDTO> searchByName(String name) {
-        List<IgdbGame> results = igdbService.searchByName(name);
+        NativeQuery query= NativeQuery.builder()
+                .withQuery(q -> q
+                        .multiMatch(mm-> mm
+                                .fields("title^3","description")
+                                .query(name)
+                                .fuzziness("AUTO")
+                        )
+                )
+                .withPageable(org.springframework.data.domain.PageRequest.of(0, 20))
+                .build();
 
-        List<Integer> ids = results.stream()
-                .map(IgdbGame::id)
-                .toList();
-
-        Map<Integer, List<IgdbGame.Platform>> platformMap = igdbService.fetchByIds(ids)
+        return elasticsearchOperations.search(query, GameDocument.class)
                 .stream()
-                .collect(Collectors.toMap(
-                        IgdbGame::id,
-                        g -> g.platforms() == null ? List.of() : g.platforms()
-                ));
-
-        return results.stream()
-                .map(igdbGame -> {
-                    List<IgdbGame.Platform> platforms = platformMap.getOrDefault(igdbGame.id(), List.of());
-                    Game game = persistGame(igdbGame, platforms);
-                    return toDTO(game);
-                })
-                .toList();
+                .map(hit->{
+                    GameDocument doc=hit.getContent();
+                    return new GameDTO(
+                            Long.parseLong(doc.getId()),
+                            doc.getTitle(),
+                            doc.getCoverThumb(),
+                            doc.getReleaseDate(),
+                            doc.getGenres()!=null?doc.getGenres():List.of(),
+                            doc.getDevelopers()!=null?doc.getDevelopers():List.of(),
+                            doc.getPlatforms()!=null?doc.getPlatforms():List.of()
+                    );
+                }).toList();
     }
 
     public GameDTO getGameById(Long id) {

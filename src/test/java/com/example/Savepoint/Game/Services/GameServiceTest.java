@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -27,7 +29,7 @@ class GameServiceTest {
     @Mock private GamePlatformRepository gamePlatformRepository;
     @Mock private IgdbService igdbService;
     @Mock private GamePersistenceHelper gamePersistenceHelper;
-
+    @Mock private ElasticsearchOperations elasticsearchOperations;
     @InjectMocks
     private GameService gameService;
 

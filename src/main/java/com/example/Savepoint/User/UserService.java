@@ -3,20 +3,19 @@ package com.example.Savepoint.User;
 import com.example.Savepoint.Auth.AuthProvider;
 import com.example.Savepoint.Auth.UserAuth;
 import com.example.Savepoint.Auth.UserAuthJpaRepositry;
+import com.example.Savepoint.Search.ElasticSearchIndexService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserProfileJpaRepositry userProfileJpaRepositry;
     private final UserAuthJpaRepositry userAuthJpaRepositry;
+    private final ElasticSearchIndexService elasticsearchIndexService;
 
-    public UserService(UserProfileJpaRepositry userProfileJpaRepositry,
-                       UserAuthJpaRepositry userAuthJpaRepositry) {
-        this.userProfileJpaRepositry = userProfileJpaRepositry;
-        this.userAuthJpaRepositry = userAuthJpaRepositry;
-    }
 
     public Optional<UserProfileDTO> findBySteamId(String steamId) {
         return userAuthJpaRepositry
@@ -50,7 +49,7 @@ public class UserService {
                 .user(savedProfile)
                 .build();
         userAuthJpaRepositry.save(auth);
-
+        elasticsearchIndexService.indexUser(savedProfile);
         return new UserProfileDTO(savedProfile.getId(), savedProfile.getDisplayName(), savedProfile.getAvatarUrl());
     }
 
@@ -72,7 +71,7 @@ public class UserService {
                 .user(savedProfile)
                 .build();
         userAuthJpaRepositry.save(auth);
-
+        elasticsearchIndexService.indexUser(savedProfile);
         return new UserProfileDTO(savedProfile.getId(), savedProfile.getDisplayName(), savedProfile.getAvatarUrl());
     }
 }

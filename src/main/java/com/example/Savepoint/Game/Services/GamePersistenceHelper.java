@@ -3,6 +3,8 @@ package com.example.Savepoint.Game.Services;
 import com.example.Savepoint.Game.Entities.*;
 import com.example.Savepoint.Game.IgdbGame;
 import com.example.Savepoint.Game.Repositories.*;
+import com.example.Savepoint.Search.ElasticSearchIndexService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,9 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class GamePersistenceHelper {
     private final GameRepository gameRepository;
     private final GenreRepository genreRepository;
@@ -20,15 +24,8 @@ public class GamePersistenceHelper {
     private final DeveloperRepository developerRepository;
     private final GameDeveloperRepository gameDeveloperRepository;
     private final GamePlatformRepository gamePlatformRepository;
+    private final ElasticSearchIndexService elasticsearchIndexService;
 
-    public GamePersistenceHelper(GameRepository gameRepository, GenreRepository genreRepository, GameGenreRepository gameGenreRepository, DeveloperRepository developerRepository, GameDeveloperRepository gameDeveloperRepository, GamePlatformRepository gamePlatformRepository) {
-        this.gameRepository = gameRepository;
-        this.genreRepository = genreRepository;
-        this.gameGenreRepository = gameGenreRepository;
-        this.developerRepository = developerRepository;
-        this.gameDeveloperRepository = gameDeveloperRepository;
-        this.gamePlatformRepository = gamePlatformRepository;
-    }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Game tryInsertGame(IgdbGame igdbGame, List<IgdbGame.Platform> platforms) {
@@ -60,6 +57,7 @@ public class GamePersistenceHelper {
                     .build());
 
             // Save Genres
+            List<String> genreNames = new ArrayList<>();
             if (igdbGame.genres() != null) {
                 for (IgdbGame.Genre g : igdbGame.genres()) {
                     Genre genre = genreRepository.findByName(g.name())
@@ -68,10 +66,12 @@ public class GamePersistenceHelper {
                     if (!exists) {
                         gameGenreRepository.save(GameGenre.builder().game(game).genre(genre).build());
                     }
+                    genreNames.add(genre.getName());
                 }
             }
 
             // Save Developers
+            List<String> developerNames = new ArrayList<>();
             if (igdbGame.involved_companies() != null) {
                 for (IgdbGame.InvolvedCompany ic : igdbGame.involved_companies()) {
                     if (ic.developer()) {
@@ -81,15 +81,19 @@ public class GamePersistenceHelper {
                         if (!exists) {
                             gameDeveloperRepository.save(GameDeveloper.builder().game(game).developer(dev).build());
                         }
+                        developerNames.add(dev.getName());
                     }
                 }
             }
 
             // Save Platforms
+            List<String> platformNames = new ArrayList<>();
             for (IgdbGame.Platform p : platforms) {
                 gamePlatformRepository.save(GamePlatform.builder().game(game).platformName(p.name()).build());
+                platformNames.add(p.name());
             }
 
+            elasticsearchIndexService.indexGame(game, genreNames, platformNames,developerNames);
             return game;
         });
     }

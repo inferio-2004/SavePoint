@@ -17,13 +17,6 @@ public class GameController {
         this.gameService = gameService;
     }
 
-
-    @PostMapping("/api/games/seed")
-    public ResponseEntity<String> preSeedGames(){
-        gameService.seedTopGames();
-        return ResponseEntity.ok().build();
-    }
-
     @GetMapping("/api/games/search")
     public ResponseEntity<List<GameDTO>> searchGames(@RequestParam String gameName) throws GameNotFoundException {
         List<GameDTO> games = gameService.searchByName(gameName);
