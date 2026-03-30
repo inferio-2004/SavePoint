@@ -25,7 +25,14 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // remove this if u don't want the cors config bean in the TodoAppApplication.java file
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/auth/**","/test/igdb","/test/igdb/testing_platforms","/api/games/seed","/external/**").permitAll()
+                        .requestMatchers("/auth/**", "/test/igdb",
+                                "/test/igdb/testing_platforms", "/external/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/reviews/game/**",
+                                "/api/likes/{reviewId}/count",
+                                "/api/follow/{userId}/followers",
+                                "/api/follow/{userId}/following")
+                        .permitAll()
                         .anyRequest().authenticated()
                 ).sessionManagement(
                         session->session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS)

@@ -48,7 +48,7 @@ public class SteamService {
         }
     }
 
-    @Scheduled(cron = "0 0 * * * *") // every 24 hours
+    @Scheduled(cron = "0 0 0 * * *") // every 24 hours
     public void syncAllSteamLibraries() {
         List<UserAuth> steamUsers = userAuthJpaRepositry.findByProvider(AuthProvider.STEAM);
         for (UserAuth auth : steamUsers) {

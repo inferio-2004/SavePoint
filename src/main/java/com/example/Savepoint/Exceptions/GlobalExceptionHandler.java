@@ -59,4 +59,34 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleReviewNotFound(ReviewNotFoundException ex) {
         return ResponseEntity.status(404).body(new ErrorResponse(404, ex.getMessage()));
     }
+
+    @ExceptionHandler(AlreadyFollowingException.class)
+    public ResponseEntity<ErrorResponse> handleAlreadyFollowing(AlreadyFollowingException ex) {
+        return ResponseEntity.status(409).body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(AlreadyLikedException.class)
+    public ResponseEntity<ErrorResponse> handleAlreadyLiked(AlreadyLikedException ex) {
+        return ResponseEntity.status(409).body(new ErrorResponse(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(SelfFollowException.class)
+    public ResponseEntity<ErrorResponse> handleSelfFollow(SelfFollowException ex) {
+        return ResponseEntity.status(400).body(new ErrorResponse(400, "You cannot follow yourself"));
+    }
+
+    @ExceptionHandler(NotFollowingException.class)
+    public ResponseEntity<ErrorResponse> handleNotFollowing(NotFollowingException ex) {
+        return ResponseEntity.status(404).body(new ErrorResponse(404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(NotLikedException.class)
+    public ResponseEntity<ErrorResponse> handleNotLiked(NotLikedException ex) {
+        return ResponseEntity.status(404).body(new ErrorResponse(404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(NotificationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotificationNotFound(NotificationNotFoundException ex) {
+        return ResponseEntity.status(404).body(new ErrorResponse(404, ex.getMessage()));
+    }
 }

@@ -1,5 +1,6 @@
 package com.example.Savepoint.Social.Follow;
 
+import com.example.Savepoint.Auth.AuthService;
 import com.example.Savepoint.Auth.SessionAuthPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,12 +16,13 @@ import org.springframework.web.bind.annotation.*;
 public class FollowController {
 
     private final FollowService followService;
+    private final AuthService authService;
 
     @PostMapping("/{followeeId}")
     public ResponseEntity<Void> follow(
             @PathVariable Integer followeeId,
             Authentication authentication) {
-        Integer followerId = getPrincipal(authentication).id();
+        Integer followerId = authService.getCurrentUserId(authentication);
         followService.follow(followerId, followeeId);
         return ResponseEntity.ok().build();
     }
@@ -29,7 +31,7 @@ public class FollowController {
     public ResponseEntity<Void> unfollow(
             @PathVariable Integer followeeId,
             Authentication authentication) {
-        Integer followerId = getPrincipal(authentication).id();
+        Integer followerId = authService.getCurrentUserId(authentication);
         followService.unfollow(followerId, followeeId);
         return ResponseEntity.noContent().build();
     }
@@ -48,7 +50,4 @@ public class FollowController {
         return ResponseEntity.ok(followService.getFollowing(userId, pageable));
     }
 
-    private SessionAuthPrincipal getPrincipal(Authentication authentication) {
-        return (SessionAuthPrincipal) authentication.getPrincipal();
-    }
 }

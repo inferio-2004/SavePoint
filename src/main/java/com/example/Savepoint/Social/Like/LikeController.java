@@ -1,5 +1,6 @@
 package com.example.Savepoint.Social.Like;
 
+import com.example.Savepoint.Auth.AuthService;
 import com.example.Savepoint.Auth.SessionAuthPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,12 +13,13 @@ import org.springframework.web.bind.annotation.*;
 public class LikeController {
 
     private final LikeService likeService;
+    private final AuthService authService;
 
     @PostMapping("/{reviewId}")
     public ResponseEntity<Void> likeReview(
             @PathVariable Long reviewId,
             Authentication authentication) {
-        Integer userId = getPrincipal(authentication).id();
+        Integer userId = authService.getCurrentUserId(authentication);
         likeService.likeReview(userId, reviewId);
         return ResponseEntity.ok().build();
     }
@@ -26,7 +28,7 @@ public class LikeController {
     public ResponseEntity<Void> unlikeReview(
             @PathVariable Long reviewId,
             Authentication authentication) {
-        Integer userId = getPrincipal(authentication).id();
+        Integer userId = authService.getCurrentUserId(authentication);
         likeService.unlikeReview(userId, reviewId);
         return ResponseEntity.noContent().build();
     }
@@ -36,7 +38,4 @@ public class LikeController {
         return ResponseEntity.ok(likeService.getLikeCount(reviewId));
     }
 
-    private SessionAuthPrincipal getPrincipal(Authentication authentication) {
-        return (SessionAuthPrincipal) authentication.getPrincipal();
-    }
 }

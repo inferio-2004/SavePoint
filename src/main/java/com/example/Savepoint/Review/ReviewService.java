@@ -10,12 +10,16 @@ import com.example.Savepoint.Game.Entities.UserGamePlatform;
 import com.example.Savepoint.Game.Entities.ReviewStatus;
 import com.example.Savepoint.Review.DTO.ReviewDTO;
 import com.example.Savepoint.Review.DTO.ReviewRequestDTO;
+import com.example.Savepoint.Social.Follow.FollowService;
+import com.example.Savepoint.Social.Notification.NotificationRepository;
+import com.example.Savepoint.Social.Notification.NotificationService;
 import com.example.Savepoint.User.UserProfile;
 import com.example.Savepoint.User.UserProfileJpaRepositry;
 import com.example.Savepoint.Exceptions.BadCredentialsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +31,8 @@ public class ReviewService {
     private final UserGameRepository userGameRepository;
     private final GameRepository gameRepository;
     private final UserProfileJpaRepositry userProfileRepository;
+    private final NotificationService notificationService;
+    private final FollowService followService;
 
     // Called for both create and update — upsert behaviour.
     // Saves as draft. isVerified is determined once at creation and never changed.
@@ -84,7 +90,7 @@ public class ReviewService {
 
         review.setPublished(true);
         userGame.setReviewStatus(ReviewStatus.PUBLISHED);
-
+        notificationService.notifyFollowersOfNewReview(followService.getFollowers(userId),review.getId());
         return toDTO(reviewRepository.save(review));
     }
 
