@@ -1,5 +1,6 @@
 package com.example.Savepoint.Game.DTO;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -11,4 +12,4 @@ public record GameDTO(
         List<String> genres,
         List<String> developers,
         List<String> platforms
-) {}
+) implements Serializable {}

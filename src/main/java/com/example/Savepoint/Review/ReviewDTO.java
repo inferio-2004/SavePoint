@@ -1,5 +1,6 @@
-package com.example.Savepoint.Review.DTO;
+package com.example.Savepoint.Review;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public record ReviewDTO(
@@ -14,4 +15,4 @@ public record ReviewDTO(
         boolean isPublished,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
-) {}
+) implements Serializable {}

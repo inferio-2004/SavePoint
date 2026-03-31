@@ -36,7 +36,7 @@ class UserControllerTest {
     @MockitoBean SteamAuthProvider steamAuthProvider;
     @MockitoBean UserDetailsService userDetailsService;
 
-    private final UserProfileDTO mockUser = new UserProfileDTO(1, "TestUser", "http://avatar.url");
+    private final UserProfileDTO mockUser = new UserProfileDTO(1, "TestUser", "http://avatar.url",UserRole.USER);
 
     // ── GET /auth/steam ───────────────────────────────────────────────────────
 

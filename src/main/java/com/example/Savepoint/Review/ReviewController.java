@@ -1,8 +1,6 @@
 package com.example.Savepoint.Review;
 
 import com.example.Savepoint.Auth.AuthService;
-import com.example.Savepoint.Auth.SessionAuthenticationToken;
-import com.example.Savepoint.Review.DTO.ReviewDTO;
 import com.example.Savepoint.Review.DTO.ReviewRequestDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

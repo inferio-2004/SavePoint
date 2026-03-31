@@ -8,7 +8,6 @@ import com.example.Savepoint.Game.Entities.UserGame;
 import com.example.Savepoint.Game.Repositories.UserGameRepository;
 import com.example.Savepoint.Game.Entities.UserGamePlatform;
 import com.example.Savepoint.Game.Entities.ReviewStatus;
-import com.example.Savepoint.Review.DTO.ReviewDTO;
 import com.example.Savepoint.Review.DTO.ReviewRequestDTO;
 import com.example.Savepoint.Exceptions.BadCredentialsException;
 import com.example.Savepoint.User.UserProfile;
