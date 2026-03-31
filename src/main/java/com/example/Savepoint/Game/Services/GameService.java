@@ -7,6 +7,7 @@ import com.example.Savepoint.Game.Repositories.*;
 import com.example.Savepoint.Game.Search.GameDocument;
 import com.example.Savepoint.Search.ElasticSearchIndexService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -89,6 +90,7 @@ public class GameService {
                 }).toList();
     }
 
+    @Cacheable(value = "games", key = "#id")
     public GameDTO getGameById(Long id) {
         Game game = gameRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Game not found"));

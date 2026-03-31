@@ -17,6 +17,8 @@ import com.example.Savepoint.User.UserProfile;
 import com.example.Savepoint.User.UserProfileJpaRepositry;
 import com.example.Savepoint.Exceptions.BadCredentialsException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -80,6 +82,7 @@ public class ReviewService {
 
     // Separate publish action — sets both Review.isPublished and UserGame.reviewStatus.
     // Both must stay in sync, which is why this is a dedicated method, not a flag in the request body.
+    @CacheEvict(value = "publishedReviews", allEntries = true)
     @Transactional
     public ReviewDTO publishReview(Long gameId, Integer userId) {
         Review review = reviewRepository.findByUser_IdAndGame_Id(userId, gameId)
@@ -95,6 +98,7 @@ public class ReviewService {
     }
 
     // Public listing — only published reviews visible
+    @Cacheable(value = "publishedReviews", key = "#gameId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<ReviewDTO> getPublishedReviews(Long gameId, Pageable pageable) {
         return reviewRepository.findByGame_IdAndIsPublishedTrue(gameId, pageable)

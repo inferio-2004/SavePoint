@@ -12,6 +12,8 @@ import com.example.Savepoint.User.UserProfile;
 import com.example.Savepoint.User.UserProfileJpaRepositry;
 import com.example.Savepoint.Exceptions.BadCredentialsException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ public class LikeService {
     private final UserProfileJpaRepositry userProfileRepository;
     private final NotificationService notificationService;
 
+    @CacheEvict(value = "likeCounts", key = "#reviewId")
     @Transactional
     public void likeReview(Integer userId, Long reviewId) {
         if (likeRepository.existsByUser_IdAndReview_Id(userId, reviewId)) {
@@ -53,6 +56,7 @@ public class LikeService {
         }
     }
 
+    @CacheEvict(value = "likeCounts", key = "#reviewId")
     @Transactional
     public void unlikeReview(Integer userId, Long reviewId) {
         Like like = likeRepository.findByUser_IdAndReview_Id(userId, reviewId)
@@ -61,6 +65,7 @@ public class LikeService {
         likeRepository.delete(like);
     }
 
+    @Cacheable(value = "likeCounts", key = "#reviewId")
     @Transactional(readOnly = true)
     public long getLikeCount(Long reviewId) {
         return likeRepository.countByReview_Id(reviewId);
