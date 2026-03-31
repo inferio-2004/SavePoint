@@ -30,4 +30,6 @@ public class UserProfile {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<UserAuth> userAuths;
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
 }

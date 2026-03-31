@@ -33,6 +33,7 @@ public class SecurityConfig {
                                 "/api/follow/{userId}/followers",
                                 "/api/follow/{userId}/following")
                         .permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 ).sessionManagement(
                         session->session.sessionCreationPolicy(SessionCreationPolicy.ALWAYS)

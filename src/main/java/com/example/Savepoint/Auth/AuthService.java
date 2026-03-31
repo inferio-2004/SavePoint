@@ -3,10 +3,7 @@ package com.example.Savepoint.Auth;
 import com.example.Savepoint.Exceptions.SteamUserNotFoundException;
 import com.example.Savepoint.Exceptions.UserAlreadyExistsException;
 import com.example.Savepoint.Steam.SteamLibraryImportHelper;
-import com.example.Savepoint.User.UserLoginDTO;
-import com.example.Savepoint.User.UserProfileDTO;
-import com.example.Savepoint.User.UserRegisterDTO;
-import com.example.Savepoint.User.UserService;
+import com.example.Savepoint.User.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -71,12 +68,12 @@ public class AuthService {
                     try{
                         String displayName = profileResponse.getBody().response().players().get(0).personaname();
                         String avatarUrl = profileResponse.getBody().response().players().get(0).avatarfull();
-                        return userService.createSteamUser(steamId, displayName, avatarUrl);
+                        return userService.createSteamUser(steamId, displayName, avatarUrl,UserRole.USER);
                     }catch(IndexOutOfBoundsException err){
                         throw new SteamUserNotFoundException("Steam user not found");
                     }
                 });
-        var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.STEAM, steamId);
+        var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.STEAM, user.role(),steamId);
         var sessionAuthentication = new SessionAuthenticationToken(principal, token.getAuthorities());
         saveToSession(sessionAuthentication, request, response);
         steamLibraryImportHelper.importSteamLibrary(user.id(), steamId);
@@ -90,7 +87,7 @@ public class AuthService {
                 userLoginDTO.mail(), userLoginDTO.password());
         var authenticated = authenticationManager.authenticate(unauthenticated);
         var user=userService.findByEmail(userLoginDTO.mail()).orElseThrow();
-        var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.MANUAL, null);
+        var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.MANUAL, user.role(),null);
         var sessionAuthentication = new SessionAuthenticationToken(principal, authenticated.getAuthorities());
         saveToSession(sessionAuthentication, request, response);
         return user;
@@ -105,7 +102,7 @@ public class AuthService {
         String hashedPassword = passwordEncoder.encode(userRegisterDTO.password());
         UserProfileDTO newUser = userService.createManualUser(userRegisterDTO.withPassword(hashedPassword));
 
-        var principal = new SessionAuthPrincipal(newUser.id(), newUser.displayName(), AuthProvider.MANUAL, null);
+        var principal = new SessionAuthPrincipal(newUser.id(), newUser.displayName(), AuthProvider.MANUAL,UserRole.USER,null);
         var sessionAuthentication = new SessionAuthenticationToken(principal);
         saveToSession(sessionAuthentication, request, response);
         return newUser;

@@ -55,10 +55,7 @@ public class SteamAuthProvider implements AuthenticationProvider {
         String claimedId = params.get("openid.claimed_id");
         String steamId = claimedId.substring(claimedId.lastIndexOf("/") + 1);
 
-        // Step 3 - Find or create user
-
-
-        // Step 4 - Return authenticated token
+        // Step 3 - Return authenticated token
         return new SteamAuthToken(params, steamId);
     }
 

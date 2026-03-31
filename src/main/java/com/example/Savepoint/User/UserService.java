@@ -22,7 +22,7 @@ public class UserService {
                 .findByProviderAndProviderUserId(AuthProvider.STEAM, steamId)
                 .map(userAuth -> {
                     UserProfile profile = userAuth.getUser();
-                    return new UserProfileDTO(profile.getId(), profile.getDisplayName(), profile.getAvatarUrl());
+                    return new UserProfileDTO(profile.getId(), profile.getDisplayName(), profile.getAvatarUrl(),profile.getRole());
                 });
     }
 
@@ -31,15 +31,16 @@ public class UserService {
                 .findByProviderAndMailId(AuthProvider.MANUAL, email)
                 .map(userAuth -> {
                     UserProfile profile = userAuth.getUser();
-                    return new UserProfileDTO(profile.getId(), profile.getDisplayName(), profile.getAvatarUrl());
+                    return new UserProfileDTO(profile.getId(), profile.getDisplayName(), profile.getAvatarUrl(),profile.getRole());
                 });
     }
 
     @Transactional
-    public UserProfileDTO createSteamUser(String steamId, String displayName, String avatarUrl) {
+    public UserProfileDTO createSteamUser(String steamId, String displayName, String avatarUrl,UserRole role) {
         UserProfile profile = UserProfile.builder()
                 .displayName(displayName)
                 .avatarUrl(avatarUrl)
+                .role(role)
                 .build();
         UserProfile savedProfile = userProfileJpaRepositry.save(profile);
 
@@ -50,7 +51,7 @@ public class UserService {
                 .build();
         userAuthJpaRepositry.save(auth);
         elasticsearchIndexService.indexUser(savedProfile);
-        return new UserProfileDTO(savedProfile.getId(), savedProfile.getDisplayName(), savedProfile.getAvatarUrl());
+        return new UserProfileDTO(savedProfile.getId(), savedProfile.getDisplayName(), savedProfile.getAvatarUrl(),UserRole.USER);
     }
 
 
@@ -61,6 +62,7 @@ public class UserService {
         UserProfile profile = UserProfile.builder()
                 .displayName(user.username())
                 .avatarUrl(null)
+                .role(UserRole.USER)
                 .build();
         UserProfile savedProfile = userProfileJpaRepositry.save(profile);
 
@@ -72,6 +74,6 @@ public class UserService {
                 .build();
         userAuthJpaRepositry.save(auth);
         elasticsearchIndexService.indexUser(savedProfile);
-        return new UserProfileDTO(savedProfile.getId(), savedProfile.getDisplayName(), savedProfile.getAvatarUrl());
+        return new UserProfileDTO(savedProfile.getId(), savedProfile.getDisplayName(), savedProfile.getAvatarUrl(),UserRole.USER);
     }
 }

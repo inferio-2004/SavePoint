@@ -1,10 +1,7 @@
 package com.example.Savepoint.Auth;
 
 import com.example.Savepoint.Exceptions.UserAlreadyExistsException;
-import com.example.Savepoint.User.UserLoginDTO;
-import com.example.Savepoint.User.UserProfileDTO;
-import com.example.Savepoint.User.UserRegisterDTO;
-import com.example.Savepoint.User.UserService;
+import com.example.Savepoint.User.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +47,7 @@ class AuthServiceTest {
 
     @InjectMocks AuthService authService;
 
-    private final UserProfileDTO mockUser = new UserProfileDTO(1, "TestUser", "http://avatar.url");
+    private final UserProfileDTO mockUser = new UserProfileDTO(1, "TestUser", "http://avatar.url",UserRole.USER);
 
     @BeforeEach
     void setup() {
@@ -94,7 +91,7 @@ class AuthServiceTest {
     void handleSteamCallback_createsSteamUser_whenNotFound() {
         Map<String, String> params = Map.of("openid.claimed_id", "https://steamcommunity.com/openid/id/" + STEAM_ID);
         SteamAuthToken authenticatedToken = new SteamAuthToken(params, STEAM_ID);
-        UserProfileDTO createdUser = new UserProfileDTO(2, "NewSteamUser", "http://new-avatar.url");
+        UserProfileDTO createdUser = new UserProfileDTO(2, "NewSteamUser", "http://new-avatar.url",UserRole.USER);
         SteamApiResponse apiResponse = new SteamApiResponse(
                 new PlayersResponse(java.util.List.of(
                         new PlayerSummary(STEAM_ID, "NewSteamUser", "http://new-avatar.url")
@@ -105,13 +102,13 @@ class AuthServiceTest {
         when(userService.findBySteamId(STEAM_ID)).thenReturn(Optional.empty());
         when(restTemplate.getForEntity(anyString(), eq(SteamApiResponse.class)))
                 .thenReturn(ResponseEntity.ok(apiResponse));
-        when(userService.createSteamUser(STEAM_ID, "NewSteamUser", "http://new-avatar.url"))
+        when(userService.createSteamUser(STEAM_ID, "NewSteamUser", "http://new-avatar.url",UserRole.USER))
                 .thenReturn(createdUser);
 
         UserProfileDTO result = authService.handleSteamCallback(params, request, response);
 
         assertThat(result).isEqualTo(createdUser);
-        verify(userService).createSteamUser(STEAM_ID, "NewSteamUser", "http://new-avatar.url");
+        verify(userService).createSteamUser(STEAM_ID, "NewSteamUser", "http://new-avatar.url",UserRole.USER);
     }
 
     @Test
@@ -183,7 +180,7 @@ class AuthServiceTest {
         assertThat(securityContext.getAuthentication()).isInstanceOf(SessionAuthenticationToken.class);
         assertThat(securityContext.getAuthentication()).isNotNull();
         assertThat(securityContext.getAuthentication().getPrincipal())
-                .isEqualTo(new SessionAuthPrincipal(mockUser.id(), mockUser.displayName(), AuthProvider.MANUAL, null));
+                .isEqualTo(new SessionAuthPrincipal(mockUser.id(), mockUser.displayName(), AuthProvider.MANUAL, UserRole.USER, null));
     }
 
     @Test

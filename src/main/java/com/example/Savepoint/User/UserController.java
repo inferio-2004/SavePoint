@@ -20,29 +20,30 @@ import java.util.Map;
 
 
 @RestController
+@RequestMapping("/auth")
 public class UserController {
     private final AuthService authService;
     public UserController(AuthService authService) {
         this.authService = authService;
     }
 
-    @GetMapping(path="/auth/steam")
+    @GetMapping(path="/steam")
     public void getAuth(HttpServletResponse resp) throws Exception{
         String finalUrl = authService.getRedirectUrlSteam();
         resp.sendRedirect(finalUrl);
     }
 
-    @GetMapping(path="/auth/steam/callback")
+    @GetMapping(path="/steam/callback")
     public ResponseEntity<UserProfileDTO> callback(@RequestParam Map<String,String> params, HttpServletResponse response, HttpServletRequest request) throws Exception{
         return ResponseEntity.ok(authService.handleSteamCallback(params,request,response));
     }
 
-    @PostMapping(path="/auth/manual/login")
+    @PostMapping(path="/manual/login")
     public  ResponseEntity<UserProfileDTO> manualLogin(@Valid @RequestBody UserLoginDTO user, HttpServletResponse response, HttpServletRequest request){
         return ResponseEntity.ok(authService.handleManualLogin(user,request,response));
     }
 
-    @PostMapping(path="/auth/manual/signup")
+    @PostMapping(path="/manual/signup")
     public ResponseEntity<UserProfileDTO> manualSignup(@Valid @RequestBody UserRegisterDTO user, HttpServletResponse response, HttpServletRequest request) {
         return ResponseEntity.status(201).body(authService.handleManualRegister(user, request, response));
     }
