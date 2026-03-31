@@ -2,13 +2,14 @@ package com.example.Savepoint.Auth;
 
 import com.example.Savepoint.Exceptions.SteamUserNotFoundException;
 import com.example.Savepoint.Exceptions.UserAlreadyExistsException;
-import com.example.Savepoint.Steam.SteamService;
+import com.example.Savepoint.Steam.SteamLibraryImportHelper;
 import com.example.Savepoint.User.UserLoginDTO;
 import com.example.Savepoint.User.UserProfileDTO;
 import com.example.Savepoint.User.UserRegisterDTO;
 import com.example.Savepoint.User.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,25 +26,19 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository securityContextRepository= new HttpSessionSecurityContextRepository();
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
-    private final SteamService steamService;
+    private final SteamLibraryImportHelper steamLibraryImportHelper;
     @Value("${app.base.url}")
     private String appBaseUrl;
     @Value("${steam.api.key}")
     private String steamApiKey;
 
-    public AuthService(AuthenticationManager authenticationManager, UserService userService, PasswordEncoder passwordEncoder, RestTemplate restTemplate, SteamService steamService) {
-        this.authenticationManager = authenticationManager;
-        this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
-        this.restTemplate = restTemplate;
-        this.steamService = steamService;
-    }
 
     public String getSteamUserProfile(String steamUserId) {
         String template="https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/" +
@@ -84,7 +79,7 @@ public class AuthService {
         var principal = new SessionAuthPrincipal(user.id(), user.displayName(), AuthProvider.STEAM, steamId);
         var sessionAuthentication = new SessionAuthenticationToken(principal, token.getAuthorities());
         saveToSession(sessionAuthentication, request, response);
-        steamService.importSteamLibrary(user.id(), steamId);
+        steamLibraryImportHelper.importSteamLibrary(user.id(), steamId);
         return user;
     }
 

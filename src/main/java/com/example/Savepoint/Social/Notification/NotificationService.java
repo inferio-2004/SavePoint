@@ -41,7 +41,7 @@ public class NotificationService {
     // can be expensive for users with large followings. Runs on a separate thread.
     // NOTE: This must be called from a separate bean (not ReviewService itself) to
     // ensure the @Async proxy is respected. Inject NotificationService into ReviewService.
-    @Async
+    @Async("lightTaskExecutor")
     @Transactional
     public void notifyFollowersOfNewReview(List<UserProfile> followers, Long reviewId) {
         List<Notification> notifications = followers.stream()

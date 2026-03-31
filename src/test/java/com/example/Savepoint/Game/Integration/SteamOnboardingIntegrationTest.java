@@ -7,8 +7,9 @@ import com.example.Savepoint.Game.Entities.UserGamePlatform;
 import com.example.Savepoint.Game.Repositories.GamePlatformIdRepository;
 import com.example.Savepoint.Game.Repositories.UserGameRepository;
 import com.example.Savepoint.Steam.SteamApiClient;
+import com.example.Savepoint.Steam.SteamLibraryImportHelper;
 import com.example.Savepoint.Steam.SteamOwnedGame;
-import com.example.Savepoint.Steam.SteamService;
+import com.example.Savepoint.Steam.SteamSyncService;
 import com.example.Savepoint.User.UserProfile;
 import com.example.Savepoint.User.UserProfileJpaRepositry;
 import org.junit.jupiter.api.AfterEach;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -33,7 +33,10 @@ import static org.mockito.Mockito.when;
 public class SteamOnboardingIntegrationTest {
 
     @Autowired
-    private SteamService steamService;
+    private SteamSyncService steamService;
+
+    @Autowired
+    private SteamLibraryImportHelper steamLibraryImportHelper;
 
     @Autowired
     private UserProfileJpaRepositry userProfileRepository;
@@ -65,7 +68,7 @@ public class SteamOnboardingIntegrationTest {
         when(steamApiClient.getOwnedGames("76561198000000001"))
                 .thenReturn(List.of(new SteamOwnedGame(steamAppId, "Elden Ring", 120)));
 
-        steamService.importSteamLibrary(testUser.getId(), "76561198000000001");
+        steamLibraryImportHelper.importSteamLibrary(testUser.getId(), "76561198000000001");
 
         // @Async runs in background — wait for it
         await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -100,7 +103,7 @@ public class SteamOnboardingIntegrationTest {
         when(steamApiClient.getOwnedGames("76561198000000001"))
                 .thenReturn(List.of(new SteamOwnedGame(steamAppId, "Disco Elysium", 80)));
 
-        steamService.importSteamLibrary(testUser.getId(), "76561198000000001");
+        steamLibraryImportHelper.importSteamLibrary(testUser.getId(), "76561198000000001");
         await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
             var platformId = gamePlatformIdRepository.findBySteamAppId(steamAppId);
             assertThat(platformId).isPresent();
@@ -123,14 +126,14 @@ public class SteamOnboardingIntegrationTest {
                 .thenReturn(List.of(new SteamOwnedGame(steamAppId, "Elden Ring", 120)));
 
         // Run twice
-        steamService.importSteamLibrary(testUser.getId(), "76561198000000001");
+        steamLibraryImportHelper.importSteamLibrary(testUser.getId(), "76561198000000001");
         await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
             var platformId = gamePlatformIdRepository.findBySteamAppId(steamAppId);
             assertThat(platformId).isPresent();
             assertThat(userGameRepository.existsByUser_IdAndGame_Id(
                     testUser.getId(), platformId.get().getGame().getId())).isTrue();
         });
-        steamService.importSteamLibrary(testUser.getId(), "76561198000000001");
+        steamLibraryImportHelper.importSteamLibrary(testUser.getId(), "76561198000000001");
         await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
             var platformId = gamePlatformIdRepository.findBySteamAppId(steamAppId);
             assertThat(platformId).isPresent();

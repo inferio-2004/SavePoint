@@ -9,28 +9,20 @@ import com.example.Savepoint.Game.Services.GamePersistenceHelper;
 import com.example.Savepoint.Game.Services.IgdbService;
 import com.example.Savepoint.User.UserProfile;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class SteamGameProcessor {
-    GamePlatformIdRepository gamePlatformIdRepository;
-    GameRepository gameRepository;
-    UserGameRepository userGameRepository;
-    IgdbService igdbService;
-    GamePersistenceHelper gamePersistenceHelper;
-
-    public SteamGameProcessor(GamePlatformIdRepository gamePlatformIdRepository, GameRepository gameRepository,UserGameRepository userGameRepository ,IgdbService igdbService, GamePersistenceHelper gamePersistenceHelper) {
-        this.gamePlatformIdRepository = gamePlatformIdRepository;
-        this.gameRepository = gameRepository;
-        this.igdbService = igdbService;
-        this.userGameRepository = userGameRepository;
-        this.gamePersistenceHelper = gamePersistenceHelper;
-    }
-
-    // inject all repos and services
+    private final GamePlatformIdRepository gamePlatformIdRepository;
+    private final GameRepository gameRepository;
+    private final UserGameRepository userGameRepository;
+    private final IgdbService igdbService;
+    private final GamePersistenceHelper gamePersistenceHelper;
 
     @Transactional
     public void processGame(UserProfile user, SteamOwnedGame steamGame) {
