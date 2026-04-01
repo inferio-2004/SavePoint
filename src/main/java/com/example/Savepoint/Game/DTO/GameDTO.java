@@ -12,4 +12,6 @@ public record GameDTO(
         List<String> genres,
         List<String> developers,
         List<String> platforms
-) implements Serializable {}
+) implements Serializable {
+    private static final long serialVersionUID = 1L;
+}

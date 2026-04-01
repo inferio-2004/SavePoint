@@ -28,10 +28,12 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**", "/test/igdb",
                                 "/test/igdb/testing_platforms", "/external/**").permitAll()
                         .requestMatchers(HttpMethod.GET,
+                                "/actuator/**",
                                 "/api/reviews/game/**",
                                 "/api/likes/{reviewId}/count",
                                 "/api/follow/{userId}/followers",
-                                "/api/follow/{userId}/following")
+                                "/api/follow/{userId}/following",
+                                "/user/search")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -41,7 +43,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setStatus(401);
                             response.setContentType("application/json");
-                            response.getWriter().write("{\"status\":401,\"message\":\"Invalid email or password\"}");
+                            response.getWriter().write("{\"status\":401,\"message\":\"user not authenticated\"}");
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setStatus(403);

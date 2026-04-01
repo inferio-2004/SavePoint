@@ -4,9 +4,14 @@ import com.example.Savepoint.Auth.AuthProvider;
 import com.example.Savepoint.Auth.UserAuth;
 import com.example.Savepoint.Auth.UserAuthJpaRepositry;
 import com.example.Savepoint.Search.ElasticSearchIndexService;
+import com.example.Savepoint.User.Search.UserDocument;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -15,7 +20,7 @@ public class UserService {
     private final UserProfileJpaRepositry userProfileJpaRepositry;
     private final UserAuthJpaRepositry userAuthJpaRepositry;
     private final ElasticSearchIndexService elasticsearchIndexService;
-
+    private final ElasticsearchOperations elasticsearchOperations;
 
     public Optional<UserProfileDTO> findBySteamId(String steamId) {
         return userAuthJpaRepositry
@@ -54,6 +59,48 @@ public class UserService {
         return new UserProfileDTO(savedProfile.getId(), savedProfile.getDisplayName(), savedProfile.getAvatarUrl(),UserRole.USER);
     }
 
+    @Transactional
+    public List<UserProfileDTO> findUserByName(String userName) {
+        NativeQuery query = NativeQuery.builder()
+                .withQuery(q -> q
+                        .bool(b -> b
+                                .should(s -> s
+                                        .match(m -> m
+                                                .field("displayName")
+                                                .query(userName)
+                                                .fuzziness("AUTO")
+                                        )
+                                )
+                                .should(s -> s
+                                        .prefix(p -> p
+                                                .field("displayName")
+                                                .value(userName.toLowerCase())
+                                        )
+                                )
+                                .should(s -> s
+                                        .wildcard(w -> w
+                                                .field("displayName")
+                                                .wildcard("*" + userName.toLowerCase() + "*")
+                                        )
+                                )
+                        )
+                )
+                .build();
+        return elasticsearchOperations.search(query, UserDocument.class)
+                .stream()
+                .map(
+                        hit->{
+                            UserDocument doc=hit.getContent();
+                            return new UserProfileDTO(
+                                    Integer.parseInt(doc.getId()),
+                                    doc.getDisplayName(),
+                                    doc.getAvatarUrl(),
+                                    UserRole.USER
+                            );
+                        }
+                )
+                .toList();
+    }
 
 
     @Transactional

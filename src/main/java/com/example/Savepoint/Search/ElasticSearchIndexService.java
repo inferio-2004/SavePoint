@@ -9,6 +9,7 @@ import com.example.Savepoint.User.UserProfile;
 import com.example.Savepoint.User.UserProfileJpaRepositry;
 import com.example.Savepoint.User.Search.UserDocument;
 import com.example.Savepoint.User.Search.UserSearchRepository;
+import com.example.Savepoint.User.UserRole;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -88,6 +89,7 @@ public class ElasticSearchIndexService {
         userSearchRepository.deleteAll();
 
         List<UserDocument> docs = userProfileRepository.findAll().stream()
+                .filter(user-> user.getRole()!= UserRole.ADMIN)
                 .map(user -> UserDocument.builder()
                         .id(user.getId().toString())
                         .displayName(user.getDisplayName())
