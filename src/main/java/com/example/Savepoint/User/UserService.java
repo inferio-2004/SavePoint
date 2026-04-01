@@ -63,29 +63,14 @@ public class UserService {
     public List<UserProfileDTO> findUserByName(String userName) {
         NativeQuery query = NativeQuery.builder()
                 .withQuery(q -> q
-                        .bool(b -> b
-                                .should(s -> s
-                                        .match(m -> m
-                                                .field("displayName")
-                                                .query(userName)
-                                                .fuzziness("AUTO")
-                                        )
-                                )
-                                .should(s -> s
-                                        .prefix(p -> p
-                                                .field("displayName")
-                                                .value(userName.toLowerCase())
-                                        )
-                                )
-                                .should(s -> s
-                                        .wildcard(w -> w
-                                                .field("displayName")
-                                                .wildcard("*" + userName.toLowerCase() + "*")
-                                        )
-                                )
+                        .match(m -> m
+                                .field("displayName")
+                                .query(userName)
+                                .analyzer("standard")
                         )
                 )
                 .build();
+
         return elasticsearchOperations.search(query, UserDocument.class)
                 .stream()
                 .map(

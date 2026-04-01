@@ -11,6 +11,8 @@ import com.example.Savepoint.User.Search.UserDocument;
 import com.example.Savepoint.User.Search.UserSearchRepository;
 import com.example.Savepoint.User.UserRole;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.IndexOperations;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +25,7 @@ public class ElasticSearchIndexService {
     private final UserSearchRepository userSearchRepository;
     private final GameRepository gameRepository;
     private final UserProfileJpaRepositry userProfileRepository;
+    private final ElasticsearchOperations elasticsearchOperations;
 
     // Called by GamePersistenceHelper after a new game is saved to Postgres
     public void indexGame(Game game, List<String> genres, List<String> platforms, List<String> developers) {
@@ -55,7 +58,11 @@ public class ElasticSearchIndexService {
     }
 
     private void reindexGames() {
-        gameSearchRepository.deleteAll();
+        IndexOperations indexOps = elasticsearchOperations.indexOps(GameDocument.class);
+        if (indexOps.exists()) {
+            indexOps.delete();
+        }
+        indexOps.createWithMapping();
 
         List<GameDocument> docs = gameRepository.findAllWithRelations().stream()
                 .map(game -> {
@@ -86,7 +93,11 @@ public class ElasticSearchIndexService {
     }
 
     private void reindexUsers() {
-        userSearchRepository.deleteAll();
+        IndexOperations indexOps = elasticsearchOperations.indexOps(UserDocument.class);
+        if (indexOps.exists()) {
+            indexOps.delete();
+        }
+        indexOps.createWithMapping();
 
         List<UserDocument> docs = userProfileRepository.findAll().stream()
                 .filter(user-> user.getRole()!= UserRole.ADMIN)
