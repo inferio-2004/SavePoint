@@ -84,6 +84,7 @@ Unit tests cover all service classes using `@ExtendWith(MockitoExtension.class)`
 ---
 
 ## What Is Coming Next
+- User search feature
 
 - Frontend (React)
 
