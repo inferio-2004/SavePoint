@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -26,6 +27,7 @@ public class UserGameService {
         return userGameRepository.findByUser_Id(userId,pageable).map(this::toDTO);
     }
 
+    @Transactional(readOnly = true)
     public Page<UserLibraryDTO> getOwnLibrary(Integer userId, Pageable pageable) {
         return userGameRepository.findByUser_Id(userId, pageable)
                 .map(userGame -> {

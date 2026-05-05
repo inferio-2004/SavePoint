@@ -21,7 +21,7 @@ public class UserGameController {
     private final AuthService authService;
 
     @GetMapping("/api/gamelist")
-    public ResponseEntity<Page<UserGameDTO>> getUserGamelist(@PageableDefault(size = 20, sort = "createdAt") Pageable pageable,Authentication authentication) {
+    public ResponseEntity<Page<UserGameDTO>> getUserGamelist(@PageableDefault(size = 20, sort = "id") Pageable pageable,Authentication authentication) {
         Integer userId=authService.getCurrentUserId(authentication);
         return ResponseEntity.ok(userGameService.getUserGames(userId,pageable));
     }
