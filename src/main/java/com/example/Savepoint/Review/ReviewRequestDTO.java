@@ -1,4 +1,4 @@
-package com.example.Savepoint.Review.DTO;
+package com.example.Savepoint.Review;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

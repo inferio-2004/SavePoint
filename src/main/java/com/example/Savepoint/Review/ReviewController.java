@@ -1,7 +1,7 @@
 package com.example.Savepoint.Review;
 
 import com.example.Savepoint.Auth.AuthService;
-import com.example.Savepoint.Review.DTO.ReviewRequestDTO;
+import com.example.Savepoint.Review.ReviewRequestDTO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -55,7 +55,4 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getOwnReview(gameId, userId));
     }
 
-    // Adapt this to however your UserDetails stores the userId.
-    // If you stored userId in a custom UserDetails, cast and call getUserId().
-    // If not, inject UserService and look up by email: userDetails.getUsername()
 }

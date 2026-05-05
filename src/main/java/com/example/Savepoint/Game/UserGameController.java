@@ -3,6 +3,7 @@ package com.example.Savepoint.Game;
 import com.example.Savepoint.Auth.AuthService;
 import com.example.Savepoint.Auth.SessionAuthenticationToken;
 import com.example.Savepoint.Game.DTO.UserGameDTO;
+import com.example.Savepoint.Game.DTO.UserLibraryDTO;
 import com.example.Savepoint.Game.Services.UserGameService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,5 +24,13 @@ public class UserGameController {
     public ResponseEntity<Page<UserGameDTO>> getUserGamelist(@PageableDefault(size = 20, sort = "createdAt") Pageable pageable,Authentication authentication) {
         Integer userId=authService.getCurrentUserId(authentication);
         return ResponseEntity.ok(userGameService.getUserGames(userId,pageable));
+    }
+
+    @GetMapping("/api/myLibrary")
+    public ResponseEntity<Page<UserLibraryDTO>> getMyLibrary(
+            @PageableDefault(size = 20, sort = "id") Pageable pageable,
+            Authentication authentication) {
+        Integer userId = authService.getCurrentUserId(authentication);
+        return ResponseEntity.ok(userGameService.getOwnLibrary(userId, pageable));
     }
 }
